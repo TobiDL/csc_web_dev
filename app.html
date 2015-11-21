@@ -1,0 +1,157 @@
+<!doctype html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <title>Weather App</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/underscore.js/1.8.3/underscore-min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/backbone.js/1.2.3/backbone-min.js"></script>
+</head>
+
+<body>
+    <script type="text/template" id="weather-template">
+        <% if (w.weatherData && w.weatherData.currently) {%>
+            <h1>Super Weather App!</h1>
+            <p>
+                Temperature:
+                <%=w.weatherData.currently.temperature.toFixed(1)%>&deg;C
+            </p>
+            <p>
+                Feels like:
+                <%=w.weatherData.currently.apparentTemperature.toFixed(1)%>&deg;C
+            </p>
+        <% } else if (w.fetchingWeather) { %>
+        <p>
+            Found your location (
+                <%=l.latitude.toFixed(2) %>,
+                <%=l.longitude.toFixed(2) %>
+            ), fetching weather...
+        </p>
+        <% } %>
+    </script>
+    <div id="weather-app"></div>
+    <script>
+        var API_KEY = '1fd139480b9f2b6118a44ddf76c4eb61';
+        (function($) {
+            
+            var LocationModel = Backbone.Model.extend({
+                initialize: function() {
+                    this.fetch();
+                },
+                defaults: {
+                    latitude: 45.5,
+                    longitude: -73.5,
+                    defaultLocation: true
+                },
+                fetch: function() {
+                    if (this.get('fetchingPosition')) {
+                        return this.get('fetchingPromise');
+                    }
+                    var _self = this;
+                    var dfd = $.Deferred();
+                    var promise = dfd.promise();
+                    if (!window.navigator.geolocation) {
+                        alert('Your navigator is not supported :(');
+                        dfd.reject(new Error('navigator not supported'));
+                        return;
+                    }
+                    _self.set({
+                        fetchingPosition: true,
+                        fetchingPromise: promise
+                    });
+                    window.navigator.geolocation.getCurrentPosition(
+                        function(position) {
+                            _self.set({
+                                latitude: position.coords.latitude,
+                                longitude: position.coords.longitude,
+                                defaultLocation: false,
+                                fetchingPosition: false,
+                                fetchingPromise: null
+                            });
+                            dfd.resolve();
+                        },
+                        function(error) {
+                            _self.set({
+                                fetchingPosition: false,
+                                fetchingPromise: null,
+                                error: true
+                            });
+                            dfd.reject(error || new Error('unknown error'));
+                        }
+                    )
+
+                    return promise;
+                }
+            });
+            
+            var WeatherModel = Backbone.Model.extend({
+                initialize: function() {
+                    var _self = this;
+                    this.location = new LocationModel();
+                    this.location.on('change', function() {
+                        if (!_self.location.get('fetchingPosition')) {
+                            _self.fetch();
+                        }
+                    });
+                },
+                fetch: function() {
+                    var _self = this;
+                    var dfd = $.Deferred();
+                    _self.set({
+                        fetchingWeather: true
+                    });
+                    $.getJSON(_self.url()).then(
+                        function(weatherData) {
+                            _self.set({
+                                weatherData: weatherData,
+                                fetchingWeather: false
+                            });
+                            dfd.resolve();
+                        },
+                        function(error) {
+                            _self.set({
+                                fetchingWeather: false,
+                                error: error || new Error('unknown error')
+                            });
+                        }
+                    );
+                    return dfd.promise();
+                },
+                url: function() {
+                    return 'https://api.forecast.io/forecast/' + API_KEY + '/' + this.location.get('latitude') + ',' + this.location.get('longitude') + '?units=ca&callback=?';
+                }
+            });
+            
+            var WeatherView = Backbone.View.extend({
+                template: _.template($('#weather-template').html()),
+                initialize: function() {
+                    var _self = this;
+                    this.model.on('change', function() {
+                        _self.render();
+                    }, this.model);
+                    this.model.location.on('change', function() {
+                        _self.render();
+                    }, this.model.location);
+                },
+                render: function() {
+                    var weatherData = this.model.toJSON();
+                    var locationData = this.model.location.toJSON();
+                    var finalHtml = this.template({
+                        w: weatherData,
+                        l: locationData
+                    });
+                    this.$el.html(finalHtml);
+                    return this;
+                }
+            });
+            var theWeather = new WeatherModel();
+            var weatherView = new WeatherView({
+                el: '#weather-app',
+                model: theWeather
+            });
+        })(jQuery);
+    </script>
+</body>
+
+</html>
