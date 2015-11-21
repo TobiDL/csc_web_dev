@@ -7,9 +7,11 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/underscore.js/1.8.3/underscore-min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/backbone.js/1.2.3/backbone-min.js"></script>
+    <link rel="stylesheet" href="style.css" type="text/css" />
 </head>
 
 <body>
+    
     <script type="text/template" id="weather-template">
         <% if (w.weatherData && w.weatherData.currently) {%>
             <h1>Super Weather App!</h1>
@@ -20,7 +22,18 @@
             <p>
                 Feels like:
                 <%=w.weatherData.currently.apparentTemperature.toFixed(1)%>&deg;C
+           
+           
+             <% if (w.weatherData.minutely.icon=="partly-cloudy-day") {%>
+	        <ul>
+	    <li class="basecloud"></li>
+	    <li class="icon-cloud icon-sunny"></li>
+	    
+	    <p>It is partly couldy.</p>
+	</ul>
+            <% } %>
             </p>
+           
         <% } else if (w.fetchingWeather) { %>
         <p>
             Found your location (
@@ -30,9 +43,10 @@
         </p>
         <% } %>
     </script>
+    
     <div id="weather-app"></div>
     <script>
-        var API_KEY = '1fd139480b9f2b6118a44ddf76c4eb61';
+        var API_KEY = '205c0e4141fcd3b30d4f99623a8f4bbd';
         (function($) {
             
             var LocationModel = Backbone.Model.extend({
