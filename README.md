@@ -8,6 +8,9 @@
 ```
 # Super Weather App Workshop
 
+## Presented by DecodeMTL :)
+[![DecodeMTL](http://www.decodemtl.com/assets/images/decodemtl-logo-black.png)](http://www.decodemtl.com)
+
 In this workshop, we will start with a basic one-page application and make it better in a number of ways.
 
 During the first hour, we will be reviewing together what is currently available, as well as discussing the various points that can be worked on to make the app better.
